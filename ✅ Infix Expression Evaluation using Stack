@@ -1,0 +1,120 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
+#define MAX 100
+
+// Stack for operators
+char opStack[MAX];
+int top = -1;
+
+// Stack for evaluation
+int valStack[MAX];
+int valTop = -1;
+
+// Push operator
+void pushOp(char c) {
+    opStack[++top] = c;
+}
+
+// Pop operator
+char popOp() {
+    return opStack[top--];
+}
+
+// Push value
+void pushVal(int val) {
+    valStack[++valTop] = val;
+}
+
+// Pop value
+int popVal() {
+    return valStack[valTop--];
+}
+
+// Operator precedence
+int precedence(char op) {
+    if (op == '+' || op == '-') return 1;
+    if (op == '*' || op == '/') return 2;
+    return 0;
+}
+
+// Apply operation
+int applyOp(int a, int b, char op) {
+    switch(op) {
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '/': return a / b;
+    }
+    return 0;
+}
+
+// Evaluate expression
+int evaluate(char* expr) {
+    int i;
+    for (i = 0; i < strlen(expr); i++) {
+
+        // If digit, push to value stack
+        if (isdigit(expr[i])) {
+            int num = 0;
+            while (isdigit(expr[i])) {
+                num = num * 10 + (expr[i] - '0');
+                i++;
+            }
+            i--;
+            pushVal(num);
+        }
+
+        // If '('
+        else if (expr[i] == '(') {
+            pushOp(expr[i]);
+        }
+
+        // If ')'
+        else if (expr[i] == ')') {
+            while (top != -1 && opStack[top] != '(') {
+                int b = popVal();
+                int a = popVal();
+                char op = popOp();
+                pushVal(applyOp(a, b, op));
+            }
+            popOp(); // remove '('
+        }
+
+        // If operator
+        else {
+            while (top != -1 && precedence(opStack[top]) >= precedence(expr[i])) {
+                int b = popVal();
+                int a = popVal();
+                char op = popOp();
+                pushVal(applyOp(a, b, op));
+            }
+            pushOp(expr[i]);
+        }
+    }
+
+    // Final evaluation
+    while (top != -1) {
+        int b = popVal();
+        int a = popVal();
+        char op = popOp();
+        pushVal(applyOp(a, b, op));
+    }
+
+    return popVal();
+}
+
+// Main function
+int main() {
+    char expr[MAX];
+
+    printf("Enter expression: ");
+    scanf("%s", expr);
+
+    int result = evaluate(expr);
+    printf("Result = %d\n", result);
+
+    return 0;
+}
